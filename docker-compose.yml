@@ -8,10 +8,11 @@ services:
       context: .
       dockerfile: docker/Dockerfile
     ports:
-      - '8080:8080'
-      - '8085:8085'
-    env_file:
-      - docker/.env
+      - "8080:8080"
+      - "8085:8085"
+    environment:
+      PG_CONN:  "host=postgres dbname=mallbots user=mallbots_user password=mallbots_pass sslmode=disable"
+      ENVIRONMENT: "development"
     depends_on:
       - postgres
     command: [ "./wait-for", "postgres:5432", "--", "/mallbots/monolith" ]
@@ -23,10 +24,10 @@ services:
     environment:
       POSTGRES_PASSWORD: itsasecret
     ports:
-      - '5432:5432'
+      - "5432:5432"
     volumes:
-      - 'pgdata:/var/lib/postgresql/data'
-      - './docker/database:/docker-entrypoint-initdb.d'
+      - "./db-data/postgres/:/var/lib/postgresql/data"
+      - "./docker/database:/docker-entrypoint-initdb.d"
 
 volumes:
   pgdata:
