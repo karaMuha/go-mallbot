@@ -33,7 +33,7 @@ func (Module) Startup(ctx context.Context, mono monolith.Monolith) error {
 	var notificationHandlers application.DomainEventHandlers
 	notificationHandlers = application.NewNotificationHandlers(notifications)
 	var app application.App
-	app = application.New(orders, customers, payments, invoices, shopping, notifications)
+	app = application.New(orders, customers, payments, invoices, shopping, domainDispatcher)
 	app = logging.NewApplication(app, mono.Logger())
 
 	// setup Driver adapters
