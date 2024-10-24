@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackus/errors"
 
+	"eda-in-golang/internal/ddd"
 	"eda-in-golang/stores/internal/domain"
 )
 
@@ -25,7 +26,9 @@ func (r StoreRepository) Find(ctx context.Context, storeID string) (*domain.Stor
 	const query = "SELECT name, location, participating FROM %s WHERE id = $1 LIMIT 1"
 
 	store := &domain.Store{
-		ID: storeID,
+		Aggregate: &ddd.AggregateBase{
+			ID: storeID,
+		},
 	}
 
 	err := r.db.QueryRowContext(ctx, r.table(query), storeID).Scan(&store.Name, &store.Location, &store.Participating)
@@ -51,10 +54,20 @@ func (r StoreRepository) FindAll(ctx context.Context) (stores []*domain.Store, e
 	}(rows)
 
 	for rows.Next() {
-		store := &domain.Store{}
-		err := rows.Scan(&store.ID, &store.Name, &store.Location, &store.Participating)
+		var id, name, location string
+		var participating bool
+		err := rows.Scan(&id, &name, &location, &participating)
 		if err != nil {
 			return nil, errors.Wrap(err, "scanning store")
+		}
+
+		store := &domain.Store{
+			Aggregate: &ddd.AggregateBase{
+				ID: id,
+			},
+			Name:          name,
+			Location:      location,
+			Participating: participating,
 		}
 
 		stores = append(stores, store)
@@ -82,10 +95,20 @@ func (r StoreRepository) FindParticipatingStores(ctx context.Context) (stores []
 	}(rows)
 
 	for rows.Next() {
-		store := &domain.Store{}
-		err := rows.Scan(&store.ID, &store.Name, &store.Location, &store.Participating)
+		var id, name, location string
+		var participating bool
+		err := rows.Scan(&id, &name, &location, &participating)
 		if err != nil {
 			return nil, errors.Wrap(err, "scanning participating store")
+		}
+
+		store := &domain.Store{
+			Aggregate: &ddd.AggregateBase{
+				ID: id,
+			},
+			Name:          name,
+			Location:      location,
+			Participating: participating,
 		}
 
 		stores = append(stores, store)
@@ -101,7 +124,7 @@ func (r StoreRepository) FindParticipatingStores(ctx context.Context) (stores []
 func (r StoreRepository) Save(ctx context.Context, store *domain.Store) error {
 	const query = "INSERT INTO %s (id, name, location, participating) VALUES ($1, $2, $3, $4)"
 
-	_, err := r.db.ExecContext(ctx, r.table(query), store.ID, store.Name, store.Location, store.Participating)
+	_, err := r.db.ExecContext(ctx, r.table(query), store.Aggregate.GetID(), store.Name, store.Location, store.Participating)
 
 	return errors.Wrap(err, "inserting store")
 }
@@ -109,7 +132,7 @@ func (r StoreRepository) Save(ctx context.Context, store *domain.Store) error {
 func (r StoreRepository) Update(ctx context.Context, store *domain.Store) error {
 	const query = "UPDATE %s SET name = $2, location = $3, participating = $4 WHERE id = $1"
 
-	_, err := r.db.ExecContext(ctx, r.table(query), store.ID, store.Name, store.Location, store.Participating)
+	_, err := r.db.ExecContext(ctx, r.table(query), store.Aggregate.GetID(), store.Name, store.Location, store.Participating)
 
 	return errors.Wrap(err, "updating store")
 }

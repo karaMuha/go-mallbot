@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackus/errors"
 
+	"eda-in-golang/internal/ddd"
 	"eda-in-golang/stores/internal/domain"
 )
 
@@ -36,10 +37,21 @@ func (r ParticipatingStoreRepository) FindAll(ctx context.Context) (stores []*do
 	}(rows)
 
 	for rows.Next() {
-		store := &domain.Store{}
-		err := rows.Scan(&store.ID, &store.Name, &store.Location, &store.Participating)
+		var id, name, location string
+		var participating bool
+		err := rows.Scan(&id, &name, &location, &participating)
+
 		if err != nil {
 			return nil, errors.Wrap(err, "scanning participating store")
+		}
+
+		store := &domain.Store{
+			Aggregate: &ddd.AggregateBase{
+				ID: id,
+			},
+			Name:          name,
+			Location:      location,
+			Participating: participating,
 		}
 
 		stores = append(stores, store)

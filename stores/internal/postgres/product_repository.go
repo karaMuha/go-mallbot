@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackus/errors"
 
+	"eda-in-golang/internal/ddd"
 	"eda-in-golang/stores/internal/domain"
 )
 
@@ -25,7 +26,9 @@ func (r ProductRepository) FindProduct(ctx context.Context, id string) (*domain.
 	const query = "SELECT store_id, name, description, sku, price FROM %s WHERE id = $1 LIMIT 1"
 
 	product := &domain.Product{
-		ID: id,
+		Aggregate: &ddd.AggregateBase{
+			ID: id,
+		},
 	}
 
 	err := r.db.QueryRowContext(ctx, r.table(query), id).Scan(&product.StoreID, &product.Name, &product.Description, &product.SKU, &product.Price)
@@ -39,7 +42,7 @@ func (r ProductRepository) FindProduct(ctx context.Context, id string) (*domain.
 func (r ProductRepository) AddProduct(ctx context.Context, product *domain.Product) error {
 	const query = "INSERT INTO %s (id, store_id, name, description, sku, price) VALUES ($1, $2, $3, $4, $5, $6)"
 
-	_, err := r.db.ExecContext(ctx, r.table(query), product.ID, product.StoreID, product.Name, product.Description, product.SKU, product.Price)
+	_, err := r.db.ExecContext(ctx, r.table(query), product.Aggregate.GetID(), product.StoreID, product.Name, product.Description, product.SKU, product.Price)
 
 	return errors.Wrap(err, "inserting product")
 }
@@ -69,12 +72,23 @@ func (r ProductRepository) GetCatalog(ctx context.Context, storeID string) ([]*d
 	}(rows)
 
 	for rows.Next() {
-		product := &domain.Product{
-			StoreID: storeID,
-		}
-		err := rows.Scan(&product.ID, &product.Name, &product.Description, &product.SKU, &product.Price)
+		var id, name, description, sku string
+		var price float64
+
+		err := rows.Scan(&id, &name, &description, &sku, &price)
 		if err != nil {
 			return nil, errors.Wrap(err, "scanning product")
+		}
+
+		product := &domain.Product{
+			Aggregate: &ddd.AggregateBase{
+				ID: id,
+			},
+			StoreID:     storeID,
+			Name:        name,
+			Description: description,
+			SKU:         sku,
+			Price:       price,
 		}
 
 		products = append(products, product)
