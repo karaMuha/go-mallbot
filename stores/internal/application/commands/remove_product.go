@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 
+	"eda-in-golang/internal/ddd"
 	"eda-in-golang/stores/internal/domain"
 )
 
@@ -11,17 +12,35 @@ type RemoveProduct struct {
 }
 
 type RemoveProductHandler struct {
-	stores   domain.StoreRepository
-	products domain.ProductRepository
+	stores          domain.StoreRepository
+	products        domain.ProductRepository
+	domainPublisher ddd.EventPublisher
 }
 
-func NewRemoveProductHandler(stores domain.StoreRepository, products domain.ProductRepository) RemoveProductHandler {
+func NewRemoveProductHandler(stores domain.StoreRepository, products domain.ProductRepository, domainPublisher ddd.EventPublisher) RemoveProductHandler {
 	return RemoveProductHandler{
-		stores:   stores,
-		products: products,
+		stores:          stores,
+		products:        products,
+		domainPublisher: domainPublisher,
 	}
 }
 
 func (h RemoveProductHandler) RemoveProduct(ctx context.Context, cmd RemoveProduct) error {
-	return h.products.RemoveProduct(ctx, cmd.ID)
+	product, err := h.products.FindProduct(ctx, cmd.ID)
+	if err != nil {
+		return err
+	}
+
+	if err = h.products.RemoveProduct(ctx, cmd.ID); err != nil {
+		return err
+	}
+
+	product.RemoveProduct()
+
+	// publish domain events
+	if err = h.domainPublisher.Publish(ctx, product.GetEvents()...); err != nil {
+		return err
+	}
+
+	return nil
 }

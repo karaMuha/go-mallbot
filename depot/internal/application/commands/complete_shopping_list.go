@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"eda-in-golang/depot/internal/domain"
+	"eda-in-golang/internal/ddd"
 )
 
 type CompleteShoppingList struct {
@@ -11,15 +12,17 @@ type CompleteShoppingList struct {
 }
 
 type CompleteShoppingListHandler struct {
-	shoppingLists domain.ShoppingListRepository
-	orders        domain.OrderRepository
+	shoppingLists   domain.ShoppingListRepository
+	orders          domain.OrderRepository
+	domainPublisher ddd.EventPublisher
 }
 
 func NewCompleteShoppingListHandler(shoppingLists domain.ShoppingListRepository, orders domain.OrderRepository,
-) CompleteShoppingListHandler {
+	domainPublisher ddd.EventPublisher) CompleteShoppingListHandler {
 	return CompleteShoppingListHandler{
-		shoppingLists: shoppingLists,
-		orders:        orders,
+		shoppingLists:   shoppingLists,
+		orders:          orders,
+		domainPublisher: domainPublisher,
 	}
 }
 
@@ -39,5 +42,13 @@ func (h CompleteShoppingListHandler) CompleteShoppingList(ctx context.Context, c
 		return err
 	}
 
-	return h.shoppingLists.Update(ctx, list)
+	if err = h.shoppingLists.Update(ctx, list); err != nil {
+		return err
+	}
+
+	if err = h.domainPublisher.Publish(ctx, list.GetEvents()...); err != nil {
+		return err
+	}
+
+	return nil
 }

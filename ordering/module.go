@@ -3,9 +3,11 @@ package ordering
 import (
 	"context"
 
+	"eda-in-golang/internal/ddd"
 	"eda-in-golang/internal/monolith"
 	"eda-in-golang/ordering/internal/application"
 	"eda-in-golang/ordering/internal/grpc"
+	"eda-in-golang/ordering/internal/handlers"
 	"eda-in-golang/ordering/internal/logging"
 	"eda-in-golang/ordering/internal/postgres"
 	"eda-in-golang/ordering/internal/rest"
@@ -15,6 +17,7 @@ type Module struct{}
 
 func (Module) Startup(ctx context.Context, mono monolith.Monolith) error {
 	// setup Driven adapters
+	domainDispatcher := ddd.NewEventDispatcher()
 	orders := postgres.NewOrderRepository("ordering.orders", mono.DB())
 	conn, err := grpc.Dial(ctx, mono.Config().Rpc.Address())
 	if err != nil {
@@ -27,8 +30,10 @@ func (Module) Startup(ctx context.Context, mono monolith.Monolith) error {
 	notifications := grpc.NewNotificationRepository(conn)
 
 	// setup application
+	var notificationHandlers application.DomainEventHandlers
+	notificationHandlers = application.NewNotificationHandlers(notifications)
 	var app application.App
-	app = application.New(orders, customers, payments, invoices, shopping, notifications)
+	app = application.New(orders, customers, payments, invoices, shopping, domainDispatcher)
 	app = logging.NewApplication(app, mono.Logger())
 
 	// setup Driver adapters
@@ -41,6 +46,8 @@ func (Module) Startup(ctx context.Context, mono monolith.Monolith) error {
 	if err := rest.RegisterSwagger(mono.Mux()); err != nil {
 		return err
 	}
+
+	handlers.RegisterNotificationHandlers(notificationHandlers, domainDispatcher)
 
 	return nil
 }
