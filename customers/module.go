@@ -8,16 +8,19 @@ import (
 	"eda-in-golang/customers/internal/logging"
 	"eda-in-golang/customers/internal/postgres"
 	"eda-in-golang/customers/internal/rest"
+	"eda-in-golang/internal/ddd"
 	"eda-in-golang/internal/monolith"
 )
 
 type Module struct{}
 
 func (m Module) Startup(ctx context.Context, mono monolith.Monolith) error {
+	// setup Driven adapters
+	domainDispatcher := ddd.NewEventDispatcher()
 	customers := postgres.NewCustomerRepository("customers.customers", mono.DB())
 
 	var app application.App
-	app = application.New(customers)
+	app = application.New(customers, domainDispatcher)
 	app = logging.LogApplicationAccess(app, mono.Logger())
 
 	if err := grpc.RegisterServer(app, mono.RPC()); err != nil {
