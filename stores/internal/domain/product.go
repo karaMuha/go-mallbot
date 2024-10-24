@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"eda-in-golang/internal/ddd"
+
 	"github.com/stackus/errors"
 )
 
@@ -10,7 +12,7 @@ var (
 )
 
 type Product struct {
-	ID          string
+	ddd.Aggregate
 	StoreID     string
 	Name        string
 	Description string
@@ -28,7 +30,9 @@ func CreateProduct(id, storeID, name, description, sku string, price float64) (*
 	}
 
 	product := &Product{
-		ID:          id,
+		Aggregate: &ddd.AggregateBase{
+			ID: id,
+		},
 		StoreID:     storeID,
 		Name:        name,
 		Description: description,
@@ -36,5 +40,15 @@ func CreateProduct(id, storeID, name, description, sku string, price float64) (*
 		Price:       price,
 	}
 
+	product.AddEvent(&ProductAdded{
+		Product: product,
+	})
+
 	return product, nil
+}
+
+func (p *Product) RemoveProduct() {
+	p.AddEvent(&ProductRemoved{
+		Product: p,
+	})
 }

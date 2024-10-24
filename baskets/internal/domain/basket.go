@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"eda-in-golang/internal/ddd"
 	"sort"
 
 	"github.com/stackus/errors"
@@ -19,15 +20,15 @@ var (
 type BasketStatus string
 
 const (
-	BasketUnknown    BasketStatus = ""
-	BasketOpen       BasketStatus = "open"
-	BasketCancelled  BasketStatus = "cancelled"
-	BasketCheckedOut BasketStatus = "checked_out"
+	BasketIsUnknown    BasketStatus = ""
+	BasketIsOpen       BasketStatus = "open"
+	BasketIsCancelled  BasketStatus = "cancelled"
+	BasketIsCheckedOut BasketStatus = "checked_out"
 )
 
 func (s BasketStatus) String() string {
 	switch s {
-	case BasketOpen, BasketCancelled, BasketCheckedOut:
+	case BasketIsOpen, BasketIsCancelled, BasketIsCheckedOut:
 		return string(s)
 	default:
 		return ""
@@ -35,7 +36,7 @@ func (s BasketStatus) String() string {
 }
 
 type Basket struct {
-	ID         string
+	ddd.Aggregate
 	CustomerID string
 	PaymentID  string
 	Items      []Item
@@ -52,21 +53,27 @@ func StartBasket(id, customerID string) (*Basket, error) {
 	}
 
 	basket := &Basket{
-		ID:         id,
+		Aggregate: &ddd.AggregateBase{
+			ID: id,
+		},
 		CustomerID: customerID,
-		Status:     BasketOpen,
+		Status:     BasketIsOpen,
 		Items:      []Item{},
 	}
+
+	basket.AddEvent(&BasketStarted{
+		Basket: basket,
+	})
 
 	return basket, nil
 }
 
 func (b Basket) IsCancellable() bool {
-	return b.Status == BasketOpen
+	return b.Status == BasketIsOpen
 }
 
 func (b Basket) IsOpen() bool {
-	return b.Status == BasketOpen
+	return b.Status == BasketIsOpen
 }
 
 func (b *Basket) Cancel() error {
@@ -74,8 +81,12 @@ func (b *Basket) Cancel() error {
 		return ErrBasketCannotBeCancelled
 	}
 
-	b.Status = BasketCancelled
+	b.Status = BasketIsCancelled
 	b.Items = []Item{}
+
+	b.AddEvent(&BasketCanceled{
+		Basket: b,
+	})
 
 	return nil
 }
@@ -94,7 +105,11 @@ func (b *Basket) Checkout(paymentID string) error {
 	}
 
 	b.PaymentID = paymentID
-	b.Status = BasketCheckedOut
+	b.Status = BasketIsCheckedOut
+
+	b.AddEvent(&BasketCheckedOut{
+		Basket: b,
+	})
 
 	return nil
 }
@@ -128,6 +143,10 @@ func (b *Basket) AddItem(store *Store, product *Product, quantity int) error {
 		return b.Items[i].StoreName <= b.Items[j].StoreName && b.Items[i].ProductName < b.Items[j].ProductName
 	})
 
+	b.AddEvent(&BasketItemAdded{
+		Basket: b,
+	})
+
 	return nil
 }
 
@@ -150,6 +169,10 @@ func (b *Basket) RemoveItem(product *Product, quantity int) error {
 			return nil
 		}
 	}
+
+	b.AddEvent(&BasketItemRemoved{
+		Basket: b,
+	})
 
 	return nil
 }

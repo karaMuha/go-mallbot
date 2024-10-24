@@ -1,11 +1,13 @@
 package domain
 
 import (
+	"eda-in-golang/internal/ddd"
+
 	"github.com/stackus/errors"
 )
 
 type Customer struct {
-	ID        string
+	ddd.Aggregate
 	Name      string
 	SmsNumber string
 	Enabled   bool
@@ -32,12 +34,20 @@ func RegisterCustomer(id, name, smsNumber string) (*Customer, error) {
 		return nil, ErrSmsNumberCannotBeBlank
 	}
 
-	return &Customer{
-		ID:        id,
+	customer := &Customer{
+		Aggregate: &ddd.AggregateBase{
+			ID: id,
+		},
 		Name:      name,
 		SmsNumber: smsNumber,
 		Enabled:   true,
-	}, nil
+	}
+
+	customer.AddEvent(&CustomerRegistered{
+		Customer: customer,
+	})
+
+	return customer, nil
 }
 
 func (c *Customer) Enable() error {
@@ -46,6 +56,10 @@ func (c *Customer) Enable() error {
 	}
 
 	c.Enabled = true
+
+	c.AddEvent(&CustomerEnabled{
+		Customer: c,
+	})
 
 	return nil
 }
@@ -56,6 +70,10 @@ func (c *Customer) Disable() error {
 	}
 
 	c.Enabled = false
+
+	c.AddEvent(&CustomerDisabled{
+		Customer: c,
+	})
 
 	return nil
 }

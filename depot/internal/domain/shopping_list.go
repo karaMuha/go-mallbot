@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"eda-in-golang/internal/ddd"
+
 	"github.com/stackus/errors"
 )
 
@@ -11,17 +13,17 @@ var (
 type ShoppingListStatus string
 
 const (
-	ShoppingListUnknown   ShoppingListStatus = ""
-	ShoppingListAvailable ShoppingListStatus = "available"
-	ShoppingListAssigned  ShoppingListStatus = "assigned"
-	ShoppingListActive    ShoppingListStatus = "active"
-	ShoppingListCompleted ShoppingListStatus = "completed"
-	ShoppingListCancelled ShoppingListStatus = "cancelled"
+	ShoppingListIsUnknown   ShoppingListStatus = ""
+	ShoppingListIsAvailable ShoppingListStatus = "available"
+	ShoppingListIsAssigned  ShoppingListStatus = "assigned"
+	ShoppingListIsActive    ShoppingListStatus = "active"
+	ShoppingListIsCompleted ShoppingListStatus = "completed"
+	ShoppingListIsCancelled ShoppingListStatus = "cancelled"
 )
 
 func (s ShoppingListStatus) String() string {
 	switch s {
-	case ShoppingListAvailable, ShoppingListAssigned, ShoppingListActive, ShoppingListCompleted, ShoppingListCancelled:
+	case ShoppingListIsAvailable, ShoppingListIsAssigned, ShoppingListIsActive, ShoppingListIsCompleted, ShoppingListIsCancelled:
 		return string(s)
 	default:
 		return ""
@@ -30,23 +32,23 @@ func (s ShoppingListStatus) String() string {
 
 func ToShoppingListStatus(status string) ShoppingListStatus {
 	switch status {
-	case ShoppingListAvailable.String():
-		return ShoppingListAvailable
-	case ShoppingListAssigned.String():
-		return ShoppingListAssigned
-	case ShoppingListActive.String():
-		return ShoppingListActive
-	case ShoppingListCompleted.String():
-		return ShoppingListCompleted
-	case ShoppingListCancelled.String():
-		return ShoppingListCancelled
+	case ShoppingListIsAvailable.String():
+		return ShoppingListIsAvailable
+	case ShoppingListIsAssigned.String():
+		return ShoppingListIsAssigned
+	case ShoppingListIsActive.String():
+		return ShoppingListIsActive
+	case ShoppingListIsCompleted.String():
+		return ShoppingListIsCompleted
+	case ShoppingListIsCancelled.String():
+		return ShoppingListIsCancelled
 	default:
-		return ShoppingListUnknown
+		return ShoppingListIsUnknown
 	}
 }
 
 type ShoppingList struct {
-	ID            string
+	ddd.Aggregate
 	OrderID       string
 	Stops         Stops
 	AssignedBotID string
@@ -54,12 +56,20 @@ type ShoppingList struct {
 }
 
 func CreateShopping(id, orderID string) *ShoppingList {
-	return &ShoppingList{
-		ID:      id,
+	shoppingList := &ShoppingList{
+		Aggregate: &ddd.AggregateBase{
+			ID: id,
+		},
 		OrderID: orderID,
-		Status:  ShoppingListAvailable,
+		Status:  ShoppingListIsAvailable,
 		Stops:   make(Stops),
 	}
+
+	shoppingList.AddEvent(&ShoppingListCreated{
+		ShoppingList: shoppingList,
+	})
+
+	return shoppingList
 }
 
 func (sl *ShoppingList) AddItem(store *Store, product *Product, quantity int) error {
@@ -77,7 +87,11 @@ func (sl *ShoppingList) AddItem(store *Store, product *Product, quantity int) er
 func (sl *ShoppingList) Cancel() error {
 	// validate status
 
-	sl.Status = ShoppingListCancelled
+	sl.Status = ShoppingListIsCancelled
+
+	sl.AddEvent(&ShoppingListCanceled{
+		ShoppingList: sl,
+	})
 
 	return nil
 }
@@ -86,7 +100,11 @@ func (sl *ShoppingList) Assign(id string) error {
 	// validate status
 
 	sl.AssignedBotID = id
-	sl.Status = ShoppingListAssigned
+	sl.Status = ShoppingListIsAssigned
+
+	sl.AddEvent(&ShoppingListAssigned{
+		ShoppingList: sl,
+	})
 
 	return nil
 }
@@ -94,7 +112,11 @@ func (sl *ShoppingList) Assign(id string) error {
 func (sl *ShoppingList) Complete() error {
 	// validate status
 
-	sl.Status = ShoppingListCompleted
+	sl.Status = ShoppingListIsCompleted
+
+	sl.AddEvent(&ShoppingListCompleted{
+		ShoppingList: sl,
+	})
 
 	return nil
 }
