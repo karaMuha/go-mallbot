@@ -9,7 +9,6 @@ import (
 	"github.com/stackus/errors"
 
 	"eda-in-golang/depot/internal/domain"
-	"eda-in-golang/internal/ddd"
 )
 
 type ShoppingListRepository struct {
@@ -29,11 +28,7 @@ func NewShoppingListRepository(tableName string, db *sql.DB) ShoppingListReposit
 func (r ShoppingListRepository) Find(ctx context.Context, id string) (*domain.ShoppingList, error) {
 	const query = "SELECT order_id, stops, assigned_bot_id, status FROM %s WHERE id = $1 LIMIT 1"
 
-	shoppingList := &domain.ShoppingList{
-		Aggregate: &ddd.AggregateBase{
-			ID: id,
-		},
-	}
+	shoppingList := domain.NewShoppingList(id)
 	var stops []byte
 	var status string
 
@@ -66,14 +61,10 @@ func (r ShoppingListRepository) FindByOrderID(ctx context.Context, orderID strin
 		return nil, errors.ErrInternalServerError.Err(err)
 	}
 
-	shoppingList := &domain.ShoppingList{
-		Aggregate: &ddd.AggregateBase{
-			ID: id,
-		},
-		OrderID:       orderID,
-		AssignedBotID: assignedBotId,
-		Status:        domain.ToShoppingListStatus(status),
-	}
+	shoppingList := domain.NewShoppingList(id)
+	shoppingList.OrderID = orderID
+	shoppingList.AssignedBotID = assignedBotId
+	shoppingList.Status = domain.ToShoppingListStatus(status)
 
 	err = json.Unmarshal(stops, &shoppingList.Stops)
 	if err != nil {
@@ -91,7 +82,7 @@ func (r ShoppingListRepository) Save(ctx context.Context, list *domain.ShoppingL
 		return errors.ErrInternalServerError.Err(err)
 	}
 
-	_, err = r.db.ExecContext(ctx, r.table(query), list.Aggregate.GetID(), list.OrderID, stops, list.AssignedBotID, list.Status.String())
+	_, err = r.db.ExecContext(ctx, r.table(query), list.Aggregate.ID(), list.OrderID, stops, list.AssignedBotID, list.Status.String())
 
 	return errors.ErrInternalServerError.Err(err)
 }
@@ -104,7 +95,7 @@ func (r ShoppingListRepository) Update(ctx context.Context, list *domain.Shoppin
 		return errors.ErrInternalServerError.Err(err)
 	}
 
-	_, err = r.db.ExecContext(ctx, r.table(query), list.Aggregate.GetID(), stops, list.AssignedBotID, list.Status.String())
+	_, err = r.db.ExecContext(ctx, r.table(query), list.Aggregate.ID(), stops, list.AssignedBotID, list.Status.String())
 
 	return errors.ErrInternalServerError.Err(err)
 }

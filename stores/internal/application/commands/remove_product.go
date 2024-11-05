@@ -14,10 +14,10 @@ type RemoveProduct struct {
 type RemoveProductHandler struct {
 	stores          domain.StoreRepository
 	products        domain.ProductRepository
-	domainPublisher ddd.EventPublisher
+	domainPublisher ddd.EventPublisher[ddd.AggregateEvent]
 }
 
-func NewRemoveProductHandler(stores domain.StoreRepository, products domain.ProductRepository, domainPublisher ddd.EventPublisher) RemoveProductHandler {
+func NewRemoveProductHandler(stores domain.StoreRepository, products domain.ProductRepository, domainPublisher ddd.EventPublisher[ddd.AggregateEvent]) RemoveProductHandler {
 	return RemoveProductHandler{
 		stores:          stores,
 		products:        products,
@@ -38,7 +38,7 @@ func (h RemoveProductHandler) RemoveProduct(ctx context.Context, cmd RemoveProdu
 	product.RemoveProduct()
 
 	// publish domain events
-	if err = h.domainPublisher.Publish(ctx, product.GetEvents()...); err != nil {
+	if err = h.domainPublisher.Publish(ctx, product.Events()...); err != nil {
 		return err
 	}
 

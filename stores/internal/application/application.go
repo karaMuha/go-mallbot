@@ -52,7 +52,7 @@ type (
 var _ App = (*Application)(nil)
 
 func New(stores domain.StoreRepository, participatingStores domain.ParticipatingStoreRepository, products domain.ProductRepository,
-	domainPublisher ddd.EventPublisher) *Application {
+	domainPublisher ddd.EventPublisher[ddd.AggregateEvent]) *Application {
 	return &Application{
 		appCommands: appCommands{
 			CreateStoreHandler:          commands.NewCreateStoreHandler(stores, domainPublisher),

@@ -13,10 +13,10 @@ type DisableParticipation struct {
 
 type DisableParticipationHandler struct {
 	stores          domain.StoreRepository
-	domainPublisher ddd.EventPublisher
+	domainPublisher ddd.EventPublisher[ddd.AggregateEvent]
 }
 
-func NewDisableParticipationHandler(stores domain.StoreRepository, domainPublisher ddd.EventPublisher) DisableParticipationHandler {
+func NewDisableParticipationHandler(stores domain.StoreRepository, domainPublisher ddd.EventPublisher[ddd.AggregateEvent]) DisableParticipationHandler {
 	return DisableParticipationHandler{
 		stores:          stores,
 		domainPublisher: domainPublisher,
@@ -38,7 +38,7 @@ func (h DisableParticipationHandler) DisableParticipation(ctx context.Context, c
 		return err
 	}
 
-	if err = h.domainPublisher.Publish(ctx, store.GetEvents()...); err != nil {
+	if err = h.domainPublisher.Publish(ctx, store.Events()...); err != nil {
 		return err
 	}
 

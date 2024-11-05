@@ -21,10 +21,10 @@ type AddProduct struct {
 type AddProductHandler struct {
 	stores          domain.StoreRepository
 	products        domain.ProductRepository
-	domainPublisher ddd.EventPublisher
+	domainPublisher ddd.EventPublisher[ddd.AggregateEvent]
 }
 
-func NewAddProductHandler(stores domain.StoreRepository, products domain.ProductRepository, domainPublisher ddd.EventPublisher) AddProductHandler {
+func NewAddProductHandler(stores domain.StoreRepository, products domain.ProductRepository, domainPublisher ddd.EventPublisher[ddd.AggregateEvent]) AddProductHandler {
 	return AddProductHandler{
 		stores:          stores,
 		products:        products,
@@ -47,7 +47,7 @@ func (h AddProductHandler) AddProduct(ctx context.Context, cmd AddProduct) error
 		return errors.Wrap(err, "error adding product")
 	}
 
-	if err = h.domainPublisher.Publish(ctx, product.GetEvents()...); err != nil {
+	if err = h.domainPublisher.Publish(ctx, product.Events()...); err != nil {
 		return err
 	}
 

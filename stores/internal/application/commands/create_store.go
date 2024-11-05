@@ -16,11 +16,11 @@ type (
 
 	CreateStoreHandler struct {
 		stores          domain.StoreRepository
-		domainPublisher ddd.EventPublisher
+		domainPublisher ddd.EventPublisher[ddd.AggregateEvent]
 	}
 )
 
-func NewCreateStoreHandler(stores domain.StoreRepository, domainPublisher ddd.EventPublisher) CreateStoreHandler {
+func NewCreateStoreHandler(stores domain.StoreRepository, domainPublisher ddd.EventPublisher[ddd.AggregateEvent]) CreateStoreHandler {
 	return CreateStoreHandler{
 		stores:          stores,
 		domainPublisher: domainPublisher,
@@ -37,7 +37,7 @@ func (h CreateStoreHandler) CreateStore(ctx context.Context, cmd CreateStore) er
 		return err
 	}
 
-	if err = h.domainPublisher.Publish(ctx, store.GetEvents()...); err != nil {
+	if err = h.domainPublisher.Publish(ctx, store.Events()...); err != nil {
 		return err
 	}
 

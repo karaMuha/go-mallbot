@@ -6,6 +6,8 @@ import (
 	"github.com/stackus/errors"
 )
 
+const StoreAggregate = "stores.Store"
+
 var (
 	ErrStoreNameIsBlank               = errors.Wrap(errors.ErrBadRequest, "the store name cannot be blank")
 	ErrStoreLocationIsBlank           = errors.Wrap(errors.ErrBadRequest, "the store location cannot be blank")
@@ -20,6 +22,12 @@ type Store struct {
 	Participating bool
 }
 
+func NewStore(id string) *Store {
+	return &Store{
+		Aggregate: ddd.NewAggregate(id, StoreAggregate),
+	}
+}
+
 func CreateStore(id, name, location string) (store *Store, err error) {
 	if name == "" {
 		return nil, ErrStoreNameIsBlank
@@ -29,15 +37,11 @@ func CreateStore(id, name, location string) (store *Store, err error) {
 		return nil, ErrStoreLocationIsBlank
 	}
 
-	store = &Store{
-		Aggregate: &ddd.AggregateBase{
-			ID: id,
-		},
-		Name:     name,
-		Location: location,
-	}
+	store = NewStore(id)
+	store.Name = name
+	store.Location = location
 
-	store.AddEvent(&StoreCreated{
+	store.AddEvent(StoreCreatedEvent, &StoreCreated{
 		Store: store,
 	})
 
@@ -51,7 +55,7 @@ func (s *Store) EnableParticipation() (err error) {
 
 	s.Participating = true
 
-	s.AddEvent(&StoreParticipationEnabled{
+	s.AddEvent(StoreParticipationEnabledEvent, &StoreParticipationEnabled{
 		Store: s,
 	})
 
@@ -65,7 +69,7 @@ func (s *Store) DisableParticipation() (err error) {
 
 	s.Participating = false
 
-	s.AddEvent(StoreParticipationDisabled{
+	s.AddEvent(StoreParticipationDisabledEvent, StoreParticipationDisabled{
 		Store: s,
 	})
 

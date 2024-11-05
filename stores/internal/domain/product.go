@@ -6,6 +6,8 @@ import (
 	"github.com/stackus/errors"
 )
 
+const ProductAggregate = "stores.Product"
+
 var (
 	ErrProductNameIsBlank     = errors.Wrap(errors.ErrBadRequest, "the product name cannot be blank")
 	ErrProductPriceIsNegative = errors.Wrap(errors.ErrBadRequest, "the product price cannot be negative")
@@ -20,6 +22,12 @@ type Product struct {
 	Price       float64
 }
 
+func NewProduct(id string) *Product {
+	return &Product{
+		Aggregate: ddd.NewAggregate(id, ProductAggregate),
+	}
+}
+
 func CreateProduct(id, storeID, name, description, sku string, price float64) (*Product, error) {
 	if name == "" {
 		return nil, ErrProductNameIsBlank
@@ -29,18 +37,14 @@ func CreateProduct(id, storeID, name, description, sku string, price float64) (*
 		return nil, ErrProductPriceIsNegative
 	}
 
-	product := &Product{
-		Aggregate: &ddd.AggregateBase{
-			ID: id,
-		},
-		StoreID:     storeID,
-		Name:        name,
-		Description: description,
-		SKU:         sku,
-		Price:       price,
-	}
+	product := NewProduct(id)
+	product.StoreID = storeID
+	product.Name = name
+	product.Description = description
+	product.SKU = sku
+	product.Price = price
 
-	product.AddEvent(&ProductAdded{
+	product.AddEvent(ProductAddedEvent, &ProductAdded{
 		Product: product,
 	})
 
@@ -48,7 +52,7 @@ func CreateProduct(id, storeID, name, description, sku string, price float64) (*
 }
 
 func (p *Product) RemoveProduct() {
-	p.AddEvent(&ProductRemoved{
+	p.AddEvent(ProductRemovedEvent, &ProductRemoved{
 		Product: p,
 	})
 }

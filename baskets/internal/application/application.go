@@ -54,14 +54,14 @@ type (
 		stores          domain.StoreRepository
 		products        domain.ProductRepository
 		orders          domain.OrderRepository
-		domainPublisher ddd.EventPublisher
+		domainPublisher ddd.EventPublisher[ddd.AggregateEvent]
 	}
 )
 
 var _ App = (*Application)(nil)
 
 func New(baskets domain.BasketRepository, stores domain.StoreRepository, products domain.ProductRepository,
-	orders domain.OrderRepository, domainPublisher ddd.EventPublisher) *Application {
+	orders domain.OrderRepository, domainPublisher ddd.EventPublisher[ddd.AggregateEvent]) *Application {
 	return &Application{
 		baskets:         baskets,
 		stores:          stores,
@@ -81,7 +81,7 @@ func (a Application) StartBasket(ctx context.Context, start StartBasket) error {
 		return err
 	}
 
-	if err = a.domainPublisher.Publish(ctx, basket.GetEvents()...); err != nil {
+	if err = a.domainPublisher.Publish(ctx, basket.Events()...); err != nil {
 		return err
 	}
 
@@ -103,7 +103,7 @@ func (a Application) CancelBasket(ctx context.Context, cancel CancelBasket) erro
 		return err
 	}
 
-	if err = a.domainPublisher.Publish(ctx, basket.GetEvents()...); err != nil {
+	if err = a.domainPublisher.Publish(ctx, basket.Events()...); err != nil {
 		return err
 	}
 
@@ -131,7 +131,7 @@ func (a Application) CheckoutBasket(ctx context.Context, checkout CheckoutBasket
 		errors.Wrap(err, "basket checkout")
 	}
 
-	if err = a.domainPublisher.Publish(ctx, basket.GetEvents()...); err != nil {
+	if err = a.domainPublisher.Publish(ctx, basket.Events()...); err != nil {
 		return err
 	}
 
@@ -162,7 +162,7 @@ func (a Application) AddItem(ctx context.Context, add AddItem) error {
 		return err
 	}
 
-	if err = a.domainPublisher.Publish(ctx, basket.GetEvents()...); err != nil {
+	if err = a.domainPublisher.Publish(ctx, basket.Events()...); err != nil {
 		return err
 	}
 
@@ -189,7 +189,7 @@ func (a Application) RemoveItem(ctx context.Context, remove RemoveItem) error {
 		return err
 	}
 
-	if err = a.domainPublisher.Publish(ctx, basket.GetEvents()...); err != nil {
+	if err = a.domainPublisher.Publish(ctx, basket.Events()...); err != nil {
 		return err
 	}
 

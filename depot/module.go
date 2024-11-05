@@ -17,7 +17,7 @@ type Module struct{}
 
 func (Module) Startup(ctx context.Context, mono monolith.Monolith) error {
 	// setup Driven adapters
-	domainDispatcher := ddd.NewEventDispatcher()
+	domainDispatcher := ddd.NewEventDispatcher[ddd.AggregateEvent]()
 	shoppingLists := postgres.NewShoppingListRepository("depot.shopping_lists", mono.DB())
 	conn, err := grpc.Dial(ctx, mono.Config().Rpc.Address())
 	if err != nil {
@@ -28,8 +28,7 @@ func (Module) Startup(ctx context.Context, mono monolith.Monolith) error {
 	orders := grpc.NewOrderRepository(conn)
 
 	// setup application
-	var orderHandlers application.DomainEventHandlers
-	orderHandlers = application.NewOrderHandlers(orders)
+	orderHandlers := application.NewOrderHandlers(orders)
 	var app application.App
 	app = application.New(shoppingLists, stores, products, orders, domainDispatcher)
 	app = logging.LogApplicationAccess(app, mono.Logger())

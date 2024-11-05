@@ -1,5 +1,12 @@
 package domain
 
+const (
+	StoreCreatedEvent               = "stores.StoreCreated"
+	StoreParticipationEnabledEvent  = "stores.StoreParticipationEnabled"
+	StoreParticipationDisabledEvent = "stores.StoreParticipationDisabled"
+	StoreRebrandedEvent             = "stores.StoreRebranded"
+)
+
 type StoreCreated struct {
 	Store *Store
 }

@@ -1,5 +1,13 @@
 package domain
 
+const (
+	ProductAddedEvent          = "stores.ProductAdded"
+	ProductRebrandedEvent      = "stores.ProductRebranded"
+	ProductPriceIncreasedEvent = "stores.ProductPriceIncreased"
+	ProductPriceDecreasedEvent = "stores.ProductPriceDecreased"
+	ProductRemovedEvent        = "stores.ProductRemoved"
+)
+
 type ProductAdded struct {
 	Product *Product
 }

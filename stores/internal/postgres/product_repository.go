@@ -7,7 +7,6 @@ import (
 
 	"github.com/stackus/errors"
 
-	"eda-in-golang/internal/ddd"
 	"eda-in-golang/stores/internal/domain"
 )
 
@@ -25,11 +24,7 @@ func NewProductRepository(tableName string, db *sql.DB) ProductRepository {
 func (r ProductRepository) FindProduct(ctx context.Context, id string) (*domain.Product, error) {
 	const query = "SELECT store_id, name, description, sku, price FROM %s WHERE id = $1 LIMIT 1"
 
-	product := &domain.Product{
-		Aggregate: &ddd.AggregateBase{
-			ID: id,
-		},
-	}
+	product := domain.NewProduct(id)
 
 	err := r.db.QueryRowContext(ctx, r.table(query), id).Scan(&product.StoreID, &product.Name, &product.Description, &product.SKU, &product.Price)
 	if err != nil {
@@ -42,7 +37,7 @@ func (r ProductRepository) FindProduct(ctx context.Context, id string) (*domain.
 func (r ProductRepository) AddProduct(ctx context.Context, product *domain.Product) error {
 	const query = "INSERT INTO %s (id, store_id, name, description, sku, price) VALUES ($1, $2, $3, $4, $5, $6)"
 
-	_, err := r.db.ExecContext(ctx, r.table(query), product.Aggregate.GetID(), product.StoreID, product.Name, product.Description, product.SKU, product.Price)
+	_, err := r.db.ExecContext(ctx, r.table(query), product.Aggregate.ID(), product.StoreID, product.Name, product.Description, product.SKU, product.Price)
 
 	return errors.Wrap(err, "inserting product")
 }
@@ -80,16 +75,12 @@ func (r ProductRepository) GetCatalog(ctx context.Context, storeID string) ([]*d
 			return nil, errors.Wrap(err, "scanning product")
 		}
 
-		product := &domain.Product{
-			Aggregate: &ddd.AggregateBase{
-				ID: id,
-			},
-			StoreID:     storeID,
-			Name:        name,
-			Description: description,
-			SKU:         sku,
-			Price:       price,
-		}
+		product := domain.NewProduct(id)
+		product.StoreID = storeID
+		product.Name = name
+		product.Description = description
+		product.SKU = sku
+		product.Price = price
 
 		products = append(products, product)
 	}

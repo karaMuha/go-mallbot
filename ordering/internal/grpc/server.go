@@ -77,7 +77,7 @@ func (s server) orderFromDomain(order *domain.Order) *orderingpb.Order {
 	}
 
 	return &orderingpb.Order{
-		Id:         order.ID,
+		Id:         order.ID(),
 		CustomerId: order.CustomerID,
 		PaymentId:  order.PaymentID,
 		Items:      items,

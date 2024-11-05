@@ -6,6 +6,8 @@ import (
 	"github.com/stackus/errors"
 )
 
+const OrderAggregate = "ordering.Order"
+
 var (
 	ErrOrderHasNoItems         = errors.Wrap(errors.ErrBadRequest, "the order has no items")
 	ErrOrderCannotBeCancelled  = errors.Wrap(errors.ErrBadRequest, "the order cannot be cancelled")
@@ -14,13 +16,19 @@ var (
 )
 
 type Order struct {
-	ddd.AggregateBase
+	ddd.Aggregate
 	CustomerID string
 	PaymentID  string
 	InvoiceID  string
 	ShoppingID string
 	Items      []*Item
 	Status     OrderStatus
+}
+
+func NewOrder(id string) *Order {
+	return &Order{
+		Aggregate: ddd.NewAggregate(id, OrderAggregate),
+	}
 }
 
 func CreateOrder(id, customerID, paymentID string, items []*Item) (*Order, error) {
@@ -36,17 +44,13 @@ func CreateOrder(id, customerID, paymentID string, items []*Item) (*Order, error
 		return nil, ErrPaymentIDCannotBeBlank
 	}
 
-	order := &Order{
-		AggregateBase: ddd.AggregateBase{
-			ID: id,
-		},
-		CustomerID: customerID,
-		PaymentID:  paymentID,
-		Items:      items,
-		Status:     OrderIsPending,
-	}
+	order := NewOrder(id)
+	order.CustomerID = customerID
+	order.PaymentID = paymentID
+	order.Items = items
+	order.Status = OrderIsPending
 
-	order.AddEvent(&OrderCreated{
+	order.AddEvent(OrderCreatedEvent, &OrderCreated{
 		Order: order,
 	})
 
@@ -60,7 +64,7 @@ func (o *Order) Cancel() error {
 
 	o.Status = OrderIsCancelled
 
-	o.AddEvent(&OrderCanceled{
+	o.AddEvent(OrderCanceledEvent, &OrderCanceled{
 		Order: o,
 	})
 
@@ -72,7 +76,7 @@ func (o *Order) Ready() error {
 
 	o.Status = OrderIsReady
 
-	o.AddEvent(&OrderReadied{
+	o.AddEvent(OrderReadiedEvent, &OrderReadied{
 		Order: o,
 	})
 
@@ -87,7 +91,7 @@ func (o *Order) Complete(invoiceID string) error {
 	o.InvoiceID = invoiceID
 	o.Status = OrderIsCompleted
 
-	o.AddEvent(&OrderCompleted{
+	o.AddEvent(OrderCompletedEvent, &OrderCompleted{
 		Order: o,
 	})
 

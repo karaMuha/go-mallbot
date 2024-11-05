@@ -6,6 +6,8 @@ import (
 	"github.com/stackus/errors"
 )
 
+const CustomerAggregate = "customers.CustomerAggregate"
+
 type Customer struct {
 	ddd.Aggregate
 	Name      string
@@ -21,6 +23,12 @@ var (
 	ErrCustomerAlreadyDisabled = errors.Wrap(errors.ErrBadRequest, "the customer is already disabled")
 )
 
+func NewCustomer(id string) *Customer {
+	return &Customer{
+		Aggregate: ddd.NewAggregate(id, CustomerAggregate),
+	}
+}
+
 func RegisterCustomer(id, name, smsNumber string) (*Customer, error) {
 	if id == "" {
 		return nil, ErrCustomerIDCannotBeBlank
@@ -34,16 +42,12 @@ func RegisterCustomer(id, name, smsNumber string) (*Customer, error) {
 		return nil, ErrSmsNumberCannotBeBlank
 	}
 
-	customer := &Customer{
-		Aggregate: &ddd.AggregateBase{
-			ID: id,
-		},
-		Name:      name,
-		SmsNumber: smsNumber,
-		Enabled:   true,
-	}
+	customer := NewCustomer(id)
+	customer.Name = name
+	customer.SmsNumber = smsNumber
+	customer.Enabled = true
 
-	customer.AddEvent(&CustomerRegistered{
+	customer.AddEvent(CustomerRegisteredEvent, &CustomerRegistered{
 		Customer: customer,
 	})
 
@@ -57,7 +61,7 @@ func (c *Customer) Enable() error {
 
 	c.Enabled = true
 
-	c.AddEvent(&CustomerEnabled{
+	c.AddEvent(CustomerEnabledEvent, &CustomerEnabled{
 		Customer: c,
 	})
 
@@ -71,7 +75,7 @@ func (c *Customer) Disable() error {
 
 	c.Enabled = false
 
-	c.AddEvent(&CustomerDisabled{
+	c.AddEvent(CustomerDisabledEvent, &CustomerDisabled{
 		Customer: c,
 	})
 

@@ -9,7 +9,6 @@ import (
 	"github.com/stackus/errors"
 
 	"eda-in-golang/baskets/internal/domain"
-	"eda-in-golang/internal/ddd"
 )
 
 type BasketRepository struct {
@@ -26,11 +25,7 @@ func NewBasketRepository(tableName string, db *sql.DB) BasketRepository {
 func (r BasketRepository) Find(ctx context.Context, basketID string) (*domain.Basket, error) {
 	const query = "SELECT customer_id, payment_id, items, status FROM %s WHERE id = $1 LIMIT 1"
 
-	basket := &domain.Basket{
-		Aggregate: &ddd.AggregateBase{
-			ID: basketID,
-		},
-	}
+	basket := domain.NewBasket(basketID)
 	var items []byte
 	var status string
 
@@ -60,7 +55,7 @@ func (r BasketRepository) Save(ctx context.Context, basket *domain.Basket) error
 		return errors.ErrInternalServerError.Err(err)
 	}
 
-	_, err = r.db.ExecContext(ctx, r.table(query), basket.Aggregate.GetID(), basket.CustomerID, basket.PaymentID, items, basket.Status.String())
+	_, err = r.db.ExecContext(ctx, r.table(query), basket.Aggregate.ID(), basket.CustomerID, basket.PaymentID, items, basket.Status.String())
 
 	return errors.ErrInternalServerError.Err(err)
 }
@@ -73,7 +68,7 @@ func (r BasketRepository) Update(ctx context.Context, basket *domain.Basket) err
 		return errors.ErrInternalServerError.Err(err)
 	}
 
-	_, err = r.db.ExecContext(ctx, r.table(query), basket.Aggregate.GetID(), basket.CustomerID, basket.PaymentID, items, basket.Status.String())
+	_, err = r.db.ExecContext(ctx, r.table(query), basket.Aggregate.ID(), basket.CustomerID, basket.PaymentID, items, basket.Status.String())
 
 	return errors.ErrInternalServerError.Err(err)
 }

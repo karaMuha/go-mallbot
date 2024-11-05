@@ -14,11 +14,11 @@ type CancelOrder struct {
 type CancelOrderHandler struct {
 	orders          domain.OrderRepository
 	shopping        domain.ShoppingRepository
-	domainPublisher ddd.EventPublisher
+	domainPublisher ddd.EventPublisher[ddd.AggregateEvent]
 }
 
 func NewCancelOrderHandler(orders domain.OrderRepository, shopping domain.ShoppingRepository,
-	domainPublisher ddd.EventPublisher,
+	domainPublisher ddd.EventPublisher[ddd.AggregateEvent],
 ) CancelOrderHandler {
 	return CancelOrderHandler{
 		orders:          orders,
@@ -45,7 +45,7 @@ func (h CancelOrderHandler) CancelOrder(ctx context.Context, cmd CancelOrder) er
 		return err
 	}
 
-	if err = h.domainPublisher.Publish(ctx, order.GetEvents()...); err != nil {
+	if err = h.domainPublisher.Publish(ctx, order.Events()...); err != nil {
 		return err
 	}
 

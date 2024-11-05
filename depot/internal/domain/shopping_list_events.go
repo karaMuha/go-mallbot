@@ -1,5 +1,12 @@
 package domain
 
+const (
+	ShoppingListCreatedEvent   = "depot.ShoppingListCreated"
+	ShoppingListCanceledEvent  = "depot.ShoppingListCanceled"
+	ShoppingListAssignedEvent  = "depot.ShoppingListAssigned"
+	ShoppingListCompletedEvent = "depot.ShoppingListCompleted"
+)
+
 type ShoppingListCreated struct {
 	ShoppingList *ShoppingList
 }

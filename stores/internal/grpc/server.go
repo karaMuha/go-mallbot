@@ -160,7 +160,7 @@ func (s server) GetProduct(ctx context.Context, request *storespb.GetProductRequ
 
 func (s server) storeFromDomain(store *domain.Store) *storespb.Store {
 	return &storespb.Store{
-		Id:            store.Aggregate.GetID(),
+		Id:            store.Aggregate.ID(),
 		Name:          store.Name,
 		Location:      store.Location,
 		Participating: store.Participating,
@@ -169,7 +169,7 @@ func (s server) storeFromDomain(store *domain.Store) *storespb.Store {
 
 func (s server) productFromDomain(product *domain.Product) *storespb.Product {
 	return &storespb.Product{
-		Id:          product.Aggregate.GetID(),
+		Id:          product.Aggregate.ID(),
 		StoreId:     product.StoreID,
 		Name:        product.Name,
 		Description: product.Description,

@@ -7,6 +7,8 @@ import (
 	"github.com/stackus/errors"
 )
 
+const BasketAggregate = "baskets.BasketAggregate"
+
 var (
 	ErrBasketHasNoItems         = errors.Wrap(errors.ErrBadRequest, "the basket has no items")
 	ErrBasketCannotBeModified   = errors.Wrap(errors.ErrBadRequest, "the basket cannot be modified")
@@ -43,6 +45,13 @@ type Basket struct {
 	Status     BasketStatus
 }
 
+func NewBasket(id string) *Basket {
+	return &Basket{
+		Aggregate: ddd.NewAggregate(id, BasketAggregate),
+		Items:     make([]Item, 0),
+	}
+}
+
 func StartBasket(id, customerID string) (*Basket, error) {
 	if id == "" {
 		return nil, ErrBasketIDCannotBeBlank
@@ -52,16 +61,11 @@ func StartBasket(id, customerID string) (*Basket, error) {
 		return nil, ErrCustomerIDCannotBeBlank
 	}
 
-	basket := &Basket{
-		Aggregate: &ddd.AggregateBase{
-			ID: id,
-		},
-		CustomerID: customerID,
-		Status:     BasketIsOpen,
-		Items:      []Item{},
-	}
+	basket := NewBasket(id)
+	basket.CustomerID = customerID
+	basket.Status = BasketIsOpen
 
-	basket.AddEvent(&BasketStarted{
+	basket.AddEvent(BasketStartedEvent, &BasketStarted{
 		Basket: basket,
 	})
 
@@ -84,7 +88,7 @@ func (b *Basket) Cancel() error {
 	b.Status = BasketIsCancelled
 	b.Items = []Item{}
 
-	b.AddEvent(&BasketCanceled{
+	b.AddEvent(BasketCanceledEvent, &BasketCanceled{
 		Basket: b,
 	})
 
@@ -107,7 +111,7 @@ func (b *Basket) Checkout(paymentID string) error {
 	b.PaymentID = paymentID
 	b.Status = BasketIsCheckedOut
 
-	b.AddEvent(&BasketCheckedOut{
+	b.AddEvent(BasketCheckedOutEvent, &BasketCheckedOut{
 		Basket: b,
 	})
 
@@ -143,7 +147,7 @@ func (b *Basket) AddItem(store *Store, product *Product, quantity int) error {
 		return b.Items[i].StoreName <= b.Items[j].StoreName && b.Items[i].ProductName < b.Items[j].ProductName
 	})
 
-	b.AddEvent(&BasketItemAdded{
+	b.AddEvent(BasketItemAddedEvent, &BasketItemAdded{
 		Basket: b,
 	})
 
@@ -170,7 +174,7 @@ func (b *Basket) RemoveItem(product *Product, quantity int) error {
 		}
 	}
 
-	b.AddEvent(&BasketItemRemoved{
+	b.AddEvent(BasketItemRemovedEvent, &BasketItemRemoved{
 		Basket: b,
 	})
 

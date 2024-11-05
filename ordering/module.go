@@ -17,7 +17,7 @@ type Module struct{}
 
 func (Module) Startup(ctx context.Context, mono monolith.Monolith) error {
 	// setup Driven adapters
-	domainDispatcher := ddd.NewEventDispatcher()
+	domainDispatcher := ddd.NewEventDispatcher[ddd.AggregateEvent]()
 	orders := postgres.NewOrderRepository("ordering.orders", mono.DB())
 	conn, err := grpc.Dial(ctx, mono.Config().Rpc.Address())
 	if err != nil {
@@ -30,8 +30,7 @@ func (Module) Startup(ctx context.Context, mono monolith.Monolith) error {
 	notifications := grpc.NewNotificationRepository(conn)
 
 	// setup application
-	var notificationHandlers application.DomainEventHandlers
-	notificationHandlers = application.NewNotificationHandlers(notifications)
+	notificationHandlers := application.NewNotificationHandlers(notifications)
 	var app application.App
 	app = application.New(orders, customers, payments, invoices, shopping, domainDispatcher)
 	app = logging.NewApplication(app, mono.Logger())

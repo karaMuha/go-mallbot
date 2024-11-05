@@ -21,11 +21,11 @@ type CreateOrderHandler struct {
 	customers       domain.CustomerRepository
 	payments        domain.PaymentRepository
 	shopping        domain.ShoppingRepository
-	domainPublisher ddd.EventPublisher
+	domainPublisher ddd.EventPublisher[ddd.AggregateEvent]
 }
 
 func NewCreateOrderHandler(orders domain.OrderRepository, customers domain.CustomerRepository,
-	payments domain.PaymentRepository, shopping domain.ShoppingRepository, domainPublisher ddd.EventPublisher,
+	payments domain.PaymentRepository, shopping domain.ShoppingRepository, domainPublisher ddd.EventPublisher[ddd.AggregateEvent],
 ) CreateOrderHandler {
 	return CreateOrderHandler{
 		orders:          orders,
@@ -63,7 +63,7 @@ func (h CreateOrderHandler) CreateOrder(ctx context.Context, cmd CreateOrder) er
 	}
 
 	// publish domain event
-	if err = h.domainPublisher.Publish(ctx, order.GetEvents()...); err != nil {
+	if err = h.domainPublisher.Publish(ctx, order.Events()...); err != nil {
 		return err
 	}
 

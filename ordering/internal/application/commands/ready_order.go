@@ -14,11 +14,11 @@ type ReadyOrder struct {
 type ReadyOrderHandler struct {
 	orders          domain.OrderRepository
 	invoices        domain.InvoiceRepository
-	domainPublisher ddd.EventPublisher
+	domainPublisher ddd.EventPublisher[ddd.AggregateEvent]
 }
 
 func NewReadyOrderHandler(orders domain.OrderRepository, invoices domain.InvoiceRepository,
-	domainPublisher ddd.EventPublisher,
+	domainPublisher ddd.EventPublisher[ddd.AggregateEvent],
 ) ReadyOrderHandler {
 	return ReadyOrderHandler{
 		orders:          orders,
@@ -45,7 +45,7 @@ func (h ReadyOrderHandler) ReadyOrder(ctx context.Context, cmd ReadyOrder) error
 		return err
 	}
 
-	if err = h.domainPublisher.Publish(ctx, order.GetEvents()...); err != nil {
+	if err = h.domainPublisher.Publish(ctx, order.Events()...); err != nil {
 		return err
 	}
 

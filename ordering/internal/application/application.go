@@ -43,7 +43,7 @@ var _ App = (*Application)(nil)
 
 func New(orders domain.OrderRepository, customers domain.CustomerRepository, payments domain.PaymentRepository,
 	invoices domain.InvoiceRepository, shopping domain.ShoppingRepository,
-	domainPublisher ddd.EventPublisher,
+	domainPublisher ddd.EventPublisher[ddd.AggregateEvent],
 ) *Application {
 	return &Application{
 		appCommands: appCommands{
