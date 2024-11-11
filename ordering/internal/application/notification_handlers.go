@@ -2,13 +2,13 @@ package application
 
 import (
 	"context"
+
 	"eda-in-golang/internal/ddd"
 	"eda-in-golang/ordering/internal/domain"
 )
 
 type NotificationHandlers[T ddd.AggregateEvent] struct {
 	notifications domain.NotificationRepository
-	ignoreUnimplementedDomainEvents
 }
 
 var _ ddd.EventHandler[ddd.AggregateEvent] = (*NotificationHandlers[ddd.AggregateEvent])(nil)
@@ -33,15 +33,15 @@ func (h NotificationHandlers[T]) HandleEvent(ctx context.Context, event T) error
 
 func (h NotificationHandlers[T]) onOrderCreated(ctx context.Context, event ddd.AggregateEvent) error {
 	orderCreated := event.Payload().(*domain.OrderCreated)
-	return h.notifications.NotifyOrderCreated(ctx, orderCreated.Order.ID(), orderCreated.Order.CustomerID)
+	return h.notifications.NotifyOrderCreated(ctx, event.AggregateID(), orderCreated.CustomerID)
 }
 
 func (h NotificationHandlers[T]) onOrderReadied(ctx context.Context, event ddd.AggregateEvent) error {
 	orderReadied := event.Payload().(*domain.OrderReadied)
-	return h.notifications.NotifyOrderReady(ctx, orderReadied.Order.ID(), orderReadied.Order.CustomerID)
+	return h.notifications.NotifyOrderReady(ctx, event.AggregateID(), orderReadied.CustomerID)
 }
 
 func (h NotificationHandlers[T]) onOrderCanceled(ctx context.Context, event ddd.AggregateEvent) error {
 	orderCanceled := event.Payload().(*domain.OrderCanceled)
-	return h.notifications.NotifyOrderCanceled(ctx, orderCanceled.Order.ID(), orderCanceled.Order.CustomerID)
+	return h.notifications.NotifyOrderCanceled(ctx, event.AggregateID(), orderCanceled.CustomerID)
 }

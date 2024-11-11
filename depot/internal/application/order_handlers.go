@@ -2,19 +2,19 @@ package application
 
 import (
 	"context"
+
 	"eda-in-golang/depot/internal/domain"
 	"eda-in-golang/internal/ddd"
 )
 
 type OrderHandlers[T ddd.AggregateEvent] struct {
 	orders domain.OrderRepository
-	ignoreUnimplementedDomainEvents
 }
 
 var _ ddd.EventHandler[ddd.AggregateEvent] = (*OrderHandlers[ddd.AggregateEvent])(nil)
 
-func NewOrderHandlers(orders domain.OrderRepository) *OrderHandlers[ddd.AggregateEvent] {
-	return &OrderHandlers[ddd.AggregateEvent]{
+func NewOrderHandlers(orders domain.OrderRepository) OrderHandlers[ddd.AggregateEvent] {
+	return OrderHandlers[ddd.AggregateEvent]{
 		orders: orders,
 	}
 }

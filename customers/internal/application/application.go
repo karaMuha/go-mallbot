@@ -3,8 +3,6 @@ package application
 import (
 	"context"
 
-	"github.com/stackus/errors"
-
 	"eda-in-golang/customers/internal/domain"
 	"eda-in-golang/internal/ddd"
 )
@@ -65,6 +63,7 @@ func (a Application) RegisterCustomer(ctx context.Context, register RegisterCust
 		return err
 	}
 
+	// publish domain events
 	if err = a.domainPublisher.Publish(ctx, customer.Events()...); err != nil {
 		return err
 	}
@@ -78,19 +77,16 @@ func (a Application) AuthorizeCustomer(ctx context.Context, authorize AuthorizeC
 		return err
 	}
 
-	if !customer.Enabled {
-		return errors.Wrap(errors.ErrUnauthorized, "customer is not authorized")
+	if err = customer.Authorize(); err != nil {
+		return err
 	}
 
+	// publish domain events
 	if err = a.domainPublisher.Publish(ctx, customer.Events()...); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (a Application) GetCustomer(ctx context.Context, get GetCustomer) (*domain.Customer, error) {
-	return a.customers.Find(ctx, get.ID)
 }
 
 func (a Application) EnableCustomer(ctx context.Context, enable EnableCustomer) error {
@@ -99,8 +95,7 @@ func (a Application) EnableCustomer(ctx context.Context, enable EnableCustomer) 
 		return err
 	}
 
-	err = customer.Enable()
-	if err != nil {
+	if err = customer.Enable(); err != nil {
 		return err
 	}
 
@@ -108,6 +103,7 @@ func (a Application) EnableCustomer(ctx context.Context, enable EnableCustomer) 
 		return err
 	}
 
+	// publish domain events
 	if err = a.domainPublisher.Publish(ctx, customer.Events()...); err != nil {
 		return err
 	}
@@ -121,10 +117,22 @@ func (a Application) DisableCustomer(ctx context.Context, disable DisableCustome
 		return err
 	}
 
-	err = customer.Disable()
-	if err != nil {
+	if err = customer.Disable(); err != nil {
 		return err
 	}
 
-	return a.customers.Update(ctx, customer)
+	if err = a.customers.Update(ctx, customer); err != nil {
+		return err
+	}
+
+	// publish domain events
+	if err = a.domainPublisher.Publish(ctx, customer.Events()...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a Application) GetCustomer(ctx context.Context, get GetCustomer) (*domain.Customer, error) {
+	return a.customers.Find(ctx, get.ID)
 }

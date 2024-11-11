@@ -17,7 +17,8 @@ type AssignShoppingListHandler struct {
 	domainPublisher ddd.EventPublisher[ddd.AggregateEvent]
 }
 
-func NewAssignShoppingListHandler(shoppingList domain.ShoppingListRepository, domainPublisher ddd.EventPublisher[ddd.AggregateEvent]) AssignShoppingListHandler {
+func NewAssignShoppingListHandler(shoppingList domain.ShoppingListRepository, domainPublisher ddd.EventPublisher[ddd.AggregateEvent],
+) AssignShoppingListHandler {
 	return AssignShoppingListHandler{
 		shoppingLists:   shoppingList,
 		domainPublisher: domainPublisher,
@@ -39,6 +40,7 @@ func (h AssignShoppingListHandler) AssignShoppingList(ctx context.Context, cmd A
 		return err
 	}
 
+	// publish domain events
 	if err = h.domainPublisher.Publish(ctx, list.Events()...); err != nil {
 		return err
 	}

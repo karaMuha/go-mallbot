@@ -19,9 +19,11 @@ func (m Module) Startup(ctx context.Context, mono monolith.Monolith) error {
 	domainDispatcher := ddd.NewEventDispatcher[ddd.AggregateEvent]()
 	customers := postgres.NewCustomerRepository("customers.customers", mono.DB())
 
-	var app application.App
-	app = application.New(customers, domainDispatcher)
-	app = logging.LogApplicationAccess(app, mono.Logger())
+	// setup application
+	app := logging.LogApplicationAccess(
+		application.New(customers, domainDispatcher),
+		mono.Logger(),
+	)
 
 	if err := grpc.RegisterServer(app, mono.RPC()); err != nil {
 		return err

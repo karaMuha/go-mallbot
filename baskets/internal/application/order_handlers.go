@@ -2,19 +2,19 @@ package application
 
 import (
 	"context"
+
 	"eda-in-golang/baskets/internal/domain"
 	"eda-in-golang/internal/ddd"
 )
 
 type OrderHandlers[T ddd.AggregateEvent] struct {
 	orders domain.OrderRepository
-	ignoreUnimplementedDomainEvents
 }
 
 var _ ddd.EventHandler[ddd.AggregateEvent] = (*OrderHandlers[ddd.AggregateEvent])(nil)
 
-func NewOrderHandlers(orders domain.OrderRepository) *OrderHandlers[ddd.AggregateEvent] {
-	return &OrderHandlers[ddd.AggregateEvent]{
+func NewOrderHandlers(orders domain.OrderRepository) OrderHandlers[ddd.AggregateEvent] {
+	return OrderHandlers[ddd.AggregateEvent]{
 		orders: orders,
 	}
 }
@@ -27,8 +27,8 @@ func (h OrderHandlers[T]) HandleEvent(ctx context.Context, event T) error {
 	return nil
 }
 
-func (h OrderHandlers[T]) onBasketCheckedOut(ctx context.Context, event ddd.Event) error {
+func (h OrderHandlers[T]) onBasketCheckedOut(ctx context.Context, event ddd.AggregateEvent) error {
 	checkedOut := event.Payload().(*domain.BasketCheckedOut)
-	_, err := h.orders.Save(ctx, checkedOut.Basket)
+	_, err := h.orders.Save(ctx, checkedOut.PaymentID, checkedOut.CustomerID, checkedOut.Items)
 	return err
 }

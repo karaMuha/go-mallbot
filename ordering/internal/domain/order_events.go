@@ -8,33 +8,30 @@ const (
 )
 
 type OrderCreated struct {
-	Order *Order
+	CustomerID string
+	PaymentID  string
+	ShoppingID string
+	Items      []Item
 }
 
-func (OrderCreated) EventName() string {
-	return "ordering.OrderCreated"
-}
+func (OrderCreated) Key() string { return OrderCreatedEvent }
 
 type OrderCanceled struct {
-	Order *Order
+	CustomerID string
 }
 
-func (OrderCanceled) EventName() string {
-	return "ordering.OrderCanceled"
-}
+func (OrderCanceled) Key() string { return OrderCanceledEvent }
 
 type OrderReadied struct {
-	Order *Order
+	CustomerID string
+	PaymentID  string
+	Total      float64
 }
 
-func (OrderReadied) EventName() string {
-	return "ordering.OrderReadied"
-}
+func (OrderReadied) Key() string { return OrderReadiedEvent }
 
 type OrderCompleted struct {
-	Order *Order
+	InvoiceID string
 }
 
-func (OrderCompleted) EventName() string {
-	return "ordering.OrderCompleted"
-}
+func (OrderCompleted) Key() string { return OrderCompletedEvent }

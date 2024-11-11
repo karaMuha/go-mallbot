@@ -9,17 +9,29 @@ const (
 )
 
 type ProductAdded struct {
-	Product *Product
+	StoreID     string
+	Name        string
+	Description string
+	SKU         string
+	Price       float64
 }
 
-func (ProductAdded) EventName() string {
-	return "stores.ProductAdded"
+// Key implements registry.Registerable
+func (ProductAdded) Key() string { return ProductAddedEvent }
+
+type ProductRebranded struct {
+	Name        string
+	Description string
 }
 
-type ProductRemoved struct {
-	Product *Product
+// Key implements registry.Registerable
+func (ProductRebranded) Key() string { return ProductRebrandedEvent }
+
+type ProductPriceChanged struct {
+	Delta float64
 }
 
-func (ProductRemoved) EventName() string {
-	return "stores.ProductRemoved"
-}
+type ProductRemoved struct{}
+
+// Key implements registry.Registerable
+func (ProductRemoved) Key() string { return ProductRemovedEvent }

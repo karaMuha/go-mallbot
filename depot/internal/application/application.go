@@ -42,13 +42,14 @@ type (
 var _ App = (*Application)(nil)
 
 func New(shoppingLists domain.ShoppingListRepository, stores domain.StoreRepository, products domain.ProductRepository,
-	orders domain.OrderRepository, domainPublisher ddd.EventPublisher[ddd.AggregateEvent]) *Application {
+	domainPublisher ddd.EventPublisher[ddd.AggregateEvent],
+) *Application {
 	return &Application{
 		appCommands: appCommands{
 			CreateShoppingListHandler:   commands.NewCreateShoppingListHandler(shoppingLists, stores, products, domainPublisher),
 			CancelShoppingListHandler:   commands.NewCancelShoppingListHandler(shoppingLists, domainPublisher),
 			AssignShoppingListHandler:   commands.NewAssignShoppingListHandler(shoppingLists, domainPublisher),
-			CompleteShoppingListHandler: commands.NewCompleteShoppingListHandler(shoppingLists, orders, domainPublisher),
+			CompleteShoppingListHandler: commands.NewCompleteShoppingListHandler(shoppingLists, domainPublisher),
 		},
 		appQueries: appQueries{
 			GetShoppingListHandler: queries.NewGetShoppingListHandler(shoppingLists),

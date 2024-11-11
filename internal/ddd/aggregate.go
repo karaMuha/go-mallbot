@@ -6,26 +6,38 @@ const (
 	AggregateVersionKey = "aggregate-version"
 )
 
-type AggregateEvent interface {
-	Event
-	AggregateName() string
-	AggregateID() string
-	AggregateVersion() int
-}
+type (
+	AggregateNamer interface {
+		AggregateName() string
+	}
 
-type Aggregate struct {
-	Entity
-	events []AggregateEvent
-}
+	Eventer interface {
+		AddEvent(string, EventPayload, ...EventOption)
+		Events() []AggregateEvent
+		ClearEvents()
+	}
 
-type aggregateEvent struct {
-	event
-}
+	Aggregate struct {
+		Entity
+		events []AggregateEvent
+	}
 
-type AggregateBase struct {
-	ID     string
-	events []Event
-}
+	AggregateEvent interface {
+		Event
+		AggregateName() string
+		AggregateID() string
+		AggregateVersion() int
+	}
+
+	aggregateEvent struct {
+		event
+	}
+)
+
+var _ interface {
+	AggregateNamer
+	Eventer
+} = (*Aggregate)(nil)
 
 func NewAggregate(id, name string) Aggregate {
 	return Aggregate{
@@ -34,17 +46,9 @@ func NewAggregate(id, name string) Aggregate {
 	}
 }
 
-func (a Aggregate) AggregateName() string {
-	return a.name
-}
-
-func (a Aggregate) Events() []AggregateEvent {
-	return a.events
-}
-
-func (a Aggregate) ClearEvents() {
-	a.events = []AggregateEvent{}
-}
+func (a Aggregate) AggregateName() string    { return a.name }
+func (a Aggregate) Events() []AggregateEvent { return a.events }
+func (a *Aggregate) ClearEvents()            { a.events = []AggregateEvent{} }
 
 func (a *Aggregate) AddEvent(name string, payload EventPayload, options ...EventOption) {
 	options = append(
@@ -62,18 +66,8 @@ func (a *Aggregate) AddEvent(name string, payload EventPayload, options ...Event
 	)
 }
 
-func (a *Aggregate) setEvents(events []AggregateEvent) {
-	a.events = events
-}
+func (a *Aggregate) setEvents(events []AggregateEvent) { a.events = events }
 
-func (e aggregateEvent) AggregateName() string {
-	return e.metadata.Get(AggregateNameKey).(string)
-}
-
-func (e aggregateEvent) AggregateID() string {
-	return e.metadata.Get(AggregateIDKey).(string)
-}
-
-func (e aggregateEvent) AggregateVersion() int {
-	return e.metadata.Get(AggregateVersionKey).(int)
-}
+func (e aggregateEvent) AggregateName() string { return e.metadata.Get(AggregateNameKey).(string) }
+func (e aggregateEvent) AggregateID() string   { return e.metadata.Get(AggregateIDKey).(string) }
+func (e aggregateEvent) AggregateVersion() int { return e.metadata.Get(AggregateVersionKey).(int) }

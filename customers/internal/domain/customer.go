@@ -1,9 +1,9 @@
 package domain
 
 import (
-	"eda-in-golang/internal/ddd"
-
 	"github.com/stackus/errors"
+
+	"eda-in-golang/internal/ddd"
 )
 
 const CustomerAggregate = "customers.CustomerAggregate"
@@ -21,6 +21,7 @@ var (
 	ErrSmsNumberCannotBeBlank  = errors.Wrap(errors.ErrBadRequest, "the SMS number cannot be blank")
 	ErrCustomerAlreadyEnabled  = errors.Wrap(errors.ErrBadRequest, "the customer is already enabled")
 	ErrCustomerAlreadyDisabled = errors.Wrap(errors.ErrBadRequest, "the customer is already disabled")
+	ErrCustomerNotAuthorized   = errors.Wrap(errors.ErrUnauthorized, "customer is not authorized")
 )
 
 func NewCustomer(id string) *Customer {
@@ -52,6 +53,20 @@ func RegisterCustomer(id, name, smsNumber string) (*Customer, error) {
 	})
 
 	return customer, nil
+}
+
+func (Customer) Key() string { return CustomerAggregate }
+
+func (c *Customer) Authorize( /* TODO authorize what? */ ) error {
+	if !c.Enabled {
+		return ErrCustomerNotAuthorized
+	}
+
+	c.AddEvent(CustomerAuthorizedEvent, &CustomerAuthorized{
+		Customer: c,
+	})
+
+	return nil
 }
 
 func (c *Customer) Enable() error {
