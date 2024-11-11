@@ -3,7 +3,7 @@ package domain
 type OrderStatus string
 
 const (
-	OrderIsUnknown   OrderStatus = ""
+	OrderUnknown     OrderStatus = ""
 	OrderIsPending   OrderStatus = "pending"
 	OrderIsInProcess OrderStatus = "in-progress"
 	OrderIsReady     OrderStatus = "ready"
@@ -33,6 +33,6 @@ func ToOrderStatus(status string) OrderStatus {
 	case OrderIsCompleted.String():
 		return OrderIsCompleted
 	default:
-		return OrderIsUnknown
+		return OrderUnknown
 	}
 }
