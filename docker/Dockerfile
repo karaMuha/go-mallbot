@@ -1,4 +1,4 @@
-FROM golang:1.17-alpine AS builder
+FROM golang:1.22.1-alpine AS builder
 
 WORKDIR /mallbots
 
@@ -12,7 +12,7 @@ RUN go mod download
 COPY .. ./
 
 # Build the binary.
-RUN go build -v -o monolith ./cmd/mallbots
+RUN go build -ldflags="-s -w" -v -o monolith ./cmd/mallbots
 
 FROM alpine:latest AS runtime
 

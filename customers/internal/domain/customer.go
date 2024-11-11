@@ -1,10 +1,12 @@
 package domain
 
 import (
-	"eda-in-golang/internal/ddd"
-
 	"github.com/stackus/errors"
+
+	"eda-in-golang/internal/ddd"
 )
+
+const CustomerAggregate = "customers.CustomerAggregate"
 
 type Customer struct {
 	ddd.Aggregate
@@ -19,7 +21,14 @@ var (
 	ErrSmsNumberCannotBeBlank  = errors.Wrap(errors.ErrBadRequest, "the SMS number cannot be blank")
 	ErrCustomerAlreadyEnabled  = errors.Wrap(errors.ErrBadRequest, "the customer is already enabled")
 	ErrCustomerAlreadyDisabled = errors.Wrap(errors.ErrBadRequest, "the customer is already disabled")
+	ErrCustomerNotAuthorized   = errors.Wrap(errors.ErrUnauthorized, "customer is not authorized")
 )
+
+func NewCustomer(id string) *Customer {
+	return &Customer{
+		Aggregate: ddd.NewAggregate(id, CustomerAggregate),
+	}
+}
 
 func RegisterCustomer(id, name, smsNumber string) (*Customer, error) {
 	if id == "" {
@@ -34,20 +43,30 @@ func RegisterCustomer(id, name, smsNumber string) (*Customer, error) {
 		return nil, ErrSmsNumberCannotBeBlank
 	}
 
-	customer := &Customer{
-		Aggregate: &ddd.AggregateBase{
-			ID: id,
-		},
-		Name:      name,
-		SmsNumber: smsNumber,
-		Enabled:   true,
-	}
+	customer := NewCustomer(id)
+	customer.Name = name
+	customer.SmsNumber = smsNumber
+	customer.Enabled = true
 
-	customer.AddEvent(&CustomerRegistered{
+	customer.AddEvent(CustomerRegisteredEvent, &CustomerRegistered{
 		Customer: customer,
 	})
 
 	return customer, nil
+}
+
+func (Customer) Key() string { return CustomerAggregate }
+
+func (c *Customer) Authorize( /* TODO authorize what? */ ) error {
+	if !c.Enabled {
+		return ErrCustomerNotAuthorized
+	}
+
+	c.AddEvent(CustomerAuthorizedEvent, &CustomerAuthorized{
+		Customer: c,
+	})
+
+	return nil
 }
 
 func (c *Customer) Enable() error {
@@ -57,7 +76,7 @@ func (c *Customer) Enable() error {
 
 	c.Enabled = true
 
-	c.AddEvent(&CustomerEnabled{
+	c.AddEvent(CustomerEnabledEvent, &CustomerEnabled{
 		Customer: c,
 	})
 
@@ -71,7 +90,7 @@ func (c *Customer) Disable() error {
 
 	c.Enabled = false
 
-	c.AddEvent(&CustomerDisabled{
+	c.AddEvent(CustomerDisabledEvent, &CustomerDisabled{
 		Customer: c,
 	})
 
